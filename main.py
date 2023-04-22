@@ -32,7 +32,7 @@ def telegram_webhook():
     return 'OK'
 
 # Set up the webhook URL
-webhook_url = 'https://your-app-name.onrender.com/telegram_webhook'
+webhook_url = 'https://guidebottest.onrender.com/telegram_webhook'
 bot.setWebhook(webhook_url)
 
 # Start the Flask app
