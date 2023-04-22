@@ -1,48 +1,42 @@
-import requests
-import json
-import time
+import os
 import telegram
-from telegram.ext import Updater, CommandHandler
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
+import requests
 
-# Genshin Impact API endpoint
-API_ENDPOINT = "https://api.genshin.dev/"
+# Replace YOUR_TOKEN with your Telegram Bot token
+bot = telegram.Bot(token=os.environ.get("TELEGRAM_BOT_TOKEN"))
 
-# Telegram Bot token
-TOKEN = "6045575028:AAEl7qOKDvIXxfZ1A0yucynCbx_2eCY8h0s"
-
-# Create a Telegram Bot instance
-bot = telegram.Bot(token=TOKEN)
-
-# Define the /start command handler
 def start(update, context):
-    context.bot.send_message(chat_id=update.effective_chat.id, text="Welcome to the Genshin Impact update bot! You will receive regular updates about the game.")
+    """Handler function for the /start command."""
+    message = "Welcome to the Genshin Impact guide! Here you can learn how to play the game and get tips and tricks to improve your gameplay. Type /guide to get started!"
+    update.message.reply_text(message)
 
-# Define the /update command handler
-def update(update, context):
-    # Get the latest game version
-    response = requests.get(API_ENDPOINT + "version")
-    data = json.loads(response.text)
-    latest_version = data.get("latest_version", "Unknown")
+def guide(update, context):
+    """Handler function for the /guide command."""
+    message = "To play Genshin Impact on mobile, you can download the game from the App Store or Google Play Store. Once you have the game installed, you can move around using the virtual joystick, jump using the button on the right, and interact with objects using the button on the left.\n\nTo level up your characters, you can use experience materials and ascension materials. Experience materials can be obtained by completing quests and defeating enemies, while ascension materials can be obtained by completing bosses and exploring the world.\n\nFor more tips and tricks, you can visit the official Genshin Impact website at https://genshin.mihoyo.com/en/"
+    update.message.reply_text(message)
 
-    # Get the latest game news
-    response = requests.get(API_ENDPOINT + "news")
-    data = json.loads(response.text)
-    latest_news = data[0]
+def echo(update, context):
+    """Handler function for all non-command messages."""
+    message = "I'm sorry, I don't understand. Type /guide to learn how to play Genshin Impact on mobile!"
+    update.message.reply_text(message)
 
-    # Send the latest game version and news to the user
-    message = "Latest game version: {}\n\nLatest game news: {}\n\nRead more: {}".format(latest_version, latest_news["title"], latest_news["url"])
-    context.bot.send_message(chat_id=update.effective_chat.id, text=message)
+def main():
+    """Main function to start the bot."""
+    # Create the Updater and pass in the bot's token
+    updater = Updater(token=os.environ.get("TELEGRAM_BOT_TOKEN"), use_context=True)
 
-# Create an Updater and attach the command handlers
-updater = Updater(token=TOKEN, use_context=True)
-updater.dispatcher.add_handler(CommandHandler('start', start))
-updater.dispatcher.add_handler(CommandHandler('update', update))
+    # Get the dispatcher to register handlers
+    dispatcher = updater.dispatcher
 
-# Start the bot
-updater.start_polling()
-print("Bot started. Press Ctrl+C to stop.")
+    # Add handlers for commands and messages
+    dispatcher.add_handler(CommandHandler("start", start))
+    dispatcher.add_handler(CommandHandler("guide", guide))
+    dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, echo))
 
-# Run the bot continuously
-while True:
-    time.sleep(3600)  # wait 1 hour
-    update(None, updater.dispatcher)  # send regular updates to all users
+    # Start the bot
+    updater.start_polling()
+    updater.idle()
+
+if __name__ == '__main__':
+    main()
