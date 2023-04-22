@@ -1,40 +1,48 @@
-import telegram
-import time
 import requests
-from flask import Flask, request
+import json
+import time
+import telegram
+from telegram.ext import Updater, CommandHandler
 
-# Enter your Telegram bot token here
-TOKEN = '5915413280:AAGQbYmJm-TI-N76ElacXWLg5OJqyJKsEmw'
+# Genshin Impact API endpoint
+API_ENDPOINT = "https://api.genshin.dev/"
 
-# Set up the Flask app
-app = Flask(__name__)
+# Telegram Bot token
+TOKEN = "6045575028:AAEl7qOKDvIXxfZ1A0yucynCbx_2eCY8h0s"
+
+# Create a Telegram Bot instance
 bot = telegram.Bot(token=TOKEN)
 
-# Define a route for handling incoming webhook updates
-@app.route('/telegram_webhook', methods=['POST'])
-def telegram_webhook():
-    update = telegram.Update.de_json(request.get_json(force=True), bot)
-    chat_id = update.effective_chat.id
-    
-    # Send a request to the Genshin Impact API for the latest news
-    response = requests.get('https://genshin.mihoyo.com/en/news/detail/12345')
-    if response.status_code == 200:
-        # Parse the HTML response to extract the news title and content
-        news_title = response.json()['data']['title']
-        news_content = response.json()['data']['content']
-        
-        # Compose a message with the news title and content
-        message = f'**New update for Genshin Impact:**\n\n{news_title}\n\n{news_content}'
-        
-        # Send the message to the user who sent the message to the bot
-        bot.send_message(chat_id=chat_id, text=message, parse_mode=telegram.ParseMode.MARKDOWN, reply_markup=telegram.ReplyKeyboardRemove())
-    
-    return 'OK'
+# Define the /start command handler
+def start(update, context):
+    context.bot.send_message(chat_id=update.effective_chat.id, text="Welcome to the Genshin Impact update bot! You will receive regular updates about the game.")
 
-# Set up the webhook URL
-webhook_url = 'https://guidebottest.onrender.com/telegram_webhook'
-bot.setWebhook(webhook_url)
+# Define the /update command handler
+def update(update, context):
+    # Get the latest game version
+    response = requests.get(API_ENDPOINT + "version")
+    data = json.loads(response.text)
+    latest_version = data.get("latest_version", "Unknown")
 
-# Start the Flask app
-if __name__ == '__main__':
-    app.run(port=5000)
+    # Get the latest game news
+    response = requests.get(API_ENDPOINT + "news")
+    data = json.loads(response.text)
+    latest_news = data[0]
+
+    # Send the latest game version and news to the user
+    message = "Latest game version: {}\n\nLatest game news: {}\n\nRead more: {}".format(latest_version, latest_news["title"], latest_news["url"])
+    context.bot.send_message(chat_id=update.effective_chat.id, text=message)
+
+# Create an Updater and attach the command handlers
+updater = Updater(token=TOKEN, use_context=True)
+updater.dispatcher.add_handler(CommandHandler('start', start))
+updater.dispatcher.add_handler(CommandHandler('update', update))
+
+# Start the bot
+updater.start_polling()
+print("Bot started. Press Ctrl+C to stop.")
+
+# Run the bot continuously
+while True:
+    time.sleep(3600)  # wait 1 hour
+    update(None, updater.dispatcher)  # send regular updates to all users
