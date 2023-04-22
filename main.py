@@ -14,7 +14,7 @@ API_ENDPOINT = "https://api.genshin.dev/"
 
 # Telegram Bot token
 
-TOKEN = "your_token_here"
+TOKEN = "6045575028:AAEc9b3vyjJ0025jdBgSNSCq2o6b4r2hByw"
 
 # Create a Telegram Bot instance
 
